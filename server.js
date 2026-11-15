@@ -5,6 +5,11 @@ import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import pkg from 'pg';
+import autenticacionRutas from './reportes/middlewares/autenticacion.js';
+import mipymeRutas from './modulos/mipymes/mipymeRutas.js';
+import reporteRutas from './modulos/reportes/reporteRutas.js';
+import listaNegraRutas from './modulos/listaNegra/listaNegraRutas.js';
+
 const { Pool } = pkg;
 
 // Configuración para usar __dirname con ES Modules
@@ -285,10 +290,30 @@ app.get('/logout', (req, res) => {
     });
 });
 
+
+// Middlewares básicos
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+app.use(session({
+    secret: 'clave_secreta_super_segura_123',
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(express.static(RAIZ));
+
+// Rutas, una por módulo
+app.use(autenticacionRutas);
+app.use(mipymeRutas);
+app.use(reporteRutas);
+app.use(listaNegraRutas);
+
 // Encender servidor en puerto 3001 (o el que prefieras)
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}/login`);
 });
+
 
 // http://localhost:3001/consultor/dashboard?id=1

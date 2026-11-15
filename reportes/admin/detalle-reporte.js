@@ -51,5 +51,63 @@
         }
     }
 
+
+      // ---------- Lista negra ----------
+    const bloque = document.getElementById('bloqueListaNegra');
+    const accion = document.getElementById('accionListaNegra');
+    const guardado = document.getElementById('motivoGuardado');
+    const formulario = document.getElementById('formListaNegra');
+    const btnAbrir = document.getElementById('btnAbrirListaNegra');
+    const btnConfirmar = document.getElementById('btnConfirmarListaNegra');
+    const btnCancelar = document.getElementById('btnCancelarListaNegra');
+    const campoMotivo = document.getElementById('motivoListaNegra');
+    const aviso = document.getElementById('avisoListaNegra');
+    let idReporteActual = null;
+
+    function mostrarAviso(texto, tipo) {
+        aviso.textContent = texto;
+        aviso.className = 'ln-aviso ' + (tipo || '');
+    }
+
+    function prepararListaNegra(r) {
+        idReporteActual = r.id_reporte;
+        bloque.hidden = true; accion.hidden = true; guardado.hidden = true;
+        if (r.estado === 'PENDIENTE') {
+            accion.hidden = false; bloque.hidden = false;
+        } else if (r.estado === 'ACEPTADO' && r.otro_motivo) {
+            document.getElementById('dMotivoListaNegra').textContent = r.otro_motivo;
+            guardado.hidden = false; bloque.hidden = false;
+        }
+    }
+
+    btnAbrir.addEventListener('click', () => {
+        formulario.hidden = false; btnAbrir.hidden = true; campoMotivo.focus();
+    });
+    btnCancelar.addEventListener('click', () => {
+        formulario.hidden = true; btnAbrir.hidden = false; campoMotivo.value = ''; mostrarAviso('');
+    });
+    btnConfirmar.addEventListener('click', async () => {
+        const motivo = campoMotivo.value.trim();
+        if (motivo === '') { mostrarAviso('Escribe el motivo antes de continuar.', 'error'); return; }
+        btnConfirmar.disabled = true;
+        mostrarAviso('Enviando...');
+        try {
+            const respuesta = await fetch(`/api/admin/reportes/${idReporteActual}/lista-negra`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motivo })
+            });
+            if (respuesta.status === 401) { window.location.href = '/login'; return; }
+            const datos = await respuesta.json();
+            if (!respuesta.ok) throw new Error(datos.error || 'No se pudo enviar a la lista negra.');
+            mostrarAviso('La MiPyME fue enviada a la lista negra.', 'ok');
+            setTimeout(() => window.location.reload(), 1200);
+        } catch (error) {
+            mostrarAviso(error.message, 'error');
+            btnConfirmar.disabled = false;
+        }
+    });
+
+
     cargar();
 })();
